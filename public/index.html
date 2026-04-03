@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navigator de Carieră & Facultate 🎓</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',-apple-system,sans-serif}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes pulse{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1.2);opacity:1}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#c4b5fd;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect}=React;
+
+// ── CAREER DATABASE ───────────────────────────────────────────────────────────
+const DB={
+software_dev:{name:"Dezvoltator Software",domain:"IT & Tehnologie",emoji:"💻",salary_ro:"7.000–18.000 RON/lună",market_outlook:"Excelent",education_path:"3-4 ani · Informatică",description:"Proiectezi și construiești aplicații web, mobile sau sisteme software, lucrând în echipe agile.",daily_life:"Stand-up 15 min, programare 4-6h, code review, rezolvare bug-uri, ocazional ședințe cu clientul.",required_skills:["Programare","Matematică","Rezolvare probleme","Engleză tech"],warnings:["Sedentarism — sport obligatoriu","Ore suplimentare la lansări"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Matematică și Informatică",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Top 1 România, ecosistem tech vibrant"},{name:"Univ. Politehnica",city:"București",faculty:"Fac. Automatică și Calculatoare",duration:"4 ani",admission_type:"Examen propriu (Mat+Fiz)",notes:"Cea mai mare facultate de profil"},{name:"Univ. de Vest",city:"Timișoara",faculty:"Fac. Matematică și Informatică",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Hub tech important, internship-uri accesibile"}]},
+data_scientist:{name:"Data Scientist",domain:"IT & Știința datelor",emoji:"📊",salary_ro:"8.000–20.000 RON/lună",market_outlook:"Excelent",education_path:"4 ani · Matematică / Informatică",description:"Extragi insight-uri din seturi mari de date folosind statistică și machine learning pentru decizii bazate pe date.",daily_life:"Colectare și curățare date, construire modele predictive, vizualizare rezultate, prezentare concluzii.",required_skills:["Matematică/Statistică","Python/R","Machine Learning","Gândire analitică"],warnings:["Necesită studii adânci în statistică","Competiție internațională ridicată"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Matematică și Informatică",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Master AI/Data Science disponibil"},{name:"Academia de Studii Economice",city:"București",faculty:"Fac. Cibernetică, Statistică și Informatică",duration:"3 ani",admission_type:"Examen propriu",notes:"Combinație matematică + economie + IT"},{name:"Univ. Al. Ioan Cuza",city:"Iași",faculty:"Fac. Informatică",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Facultate puternică, centru universitar dinamic"}]},
+ux_designer:{name:"Designer UX/UI",domain:"Design & Tehnologie",emoji:"🎨",salary_ro:"5.000–14.000 RON/lună",market_outlook:"Bun",education_path:"3-4 ani · Design / Arte",description:"Creezi experiențe digitale intuitive și estetice, combinând psihologia utilizatorului cu designul vizual.",daily_life:"Cercetare utilizatori, wireframe-uri în Figma, prototipare, testare, colaborare cu developerii.",required_skills:["Creativitate","Empatie","Figma/Adobe XD","Psihologia utilizatorului"],warnings:["Feedback subiectiv poate fi frustrant","Necesită portofoliu solid pentru angajare"],faculties:[{name:"Univ. de Arte și Design",city:"Cluj-Napoca",faculty:"Secția Design",duration:"4 ani",admission_type:"Examen aptitudini artistice",notes:"Una din cele mai bune din România"},{name:"Univ. Națională de Arte",city:"București",faculty:"Fac. Arte Decorative și Design",duration:"4 ani",admission_type:"Examen aptitudini artistice",notes:"Tradiție artistică solidă"},{name:"Univ. Politehnica",city:"Timișoara",faculty:"Fac. Design și Arte",duration:"4 ani",admission_type:"Portofoliu + interviu",notes:"Abordare modernă, îmbinând tehnicul cu creativul"}]},
+medic:{name:"Medic",domain:"Sănătate & Medicină",emoji:"🏥",salary_ro:"6.000–20.000 RON/lună",market_outlook:"Excelent",education_path:"6 ani Medicină + 3-7 ani Rezidențiat",description:"Diagnostichezi și tratezi boli, îngrijind pacienți în spitale, clinici sau cabinete private.",daily_life:"Consultații, interpretare analize, stabilire tratamente, urgențe, documentație medicală.",required_skills:["Biologie","Chimie","Empatie","Rezistență la stres","Decizii rapide"],warnings:["Drum lung: 6 ani + rezidențiat","Ture de noapte","Stres emoțional ridicat"],faculties:[{name:"UMF Cluj-Napoca",city:"Cluj-Napoca",faculty:"Facultatea de Medicină",duration:"6 ani",admission_type:"Examen propriu (Bio + Chimie)",notes:"Top 1 medicină, admitere competitivă"},{name:"UMF Carol Davila",city:"București",faculty:"Facultatea de Medicină",duration:"6 ani",admission_type:"Examen propriu",notes:"Cea mai veche și mai mare școală"},{name:"UMF Victor Babeș",city:"Timișoara",faculty:"Facultatea de Medicină",duration:"6 ani",admission_type:"Examen propriu",notes:"Recunoscută internațional"}]},
+psychologist:{name:"Psiholog Clinician",domain:"Sănătate Mintală",emoji:"🧠",salary_ro:"4.000–10.000 RON/lună",market_outlook:"Bun",education_path:"3 ani Psihologie + 2 ani Master + Stagiu",description:"Evaluezi și tratezi tulburări psihologice, oferi terapie individuală sau de grup persoanelor în dificultate.",daily_life:"Ședințe de terapie 50 min, evaluări psihologice, rapoarte, supervizare cazuri.",required_skills:["Empatie profundă","Ascultare activă","Răbdare","Neutralitate emoțională"],warnings:["500h practică supervizată pentru atestat","Povara emoțională a cazurilor grele"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Psihologie și Știinte ale Educației",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Cea mai bine cotată psihologie"},{name:"Univ. din București",city:"București",faculty:"Fac. Psihologie și Educație",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Tradiție îndelungată, profesori de referință"},{name:"Univ. de Vest",city:"Timișoara",faculty:"Fac. Sociologie și Psihologie",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Program modern, stagii practice incluse"}]},
+architect:{name:"Arhitect",domain:"Arhitectură & Construcții",emoji:"🏛️",salary_ro:"5.000–12.000 RON/lună",market_outlook:"Bun",education_path:"6 ani · Arhitectură (program integrat)",description:"Proiectezi clădiri și spații care îmbină funcționalitatea cu estetica, de la case la complexuri publice.",daily_life:"Proiectare în AutoCAD/Revit, întâlniri cu clienții, vizite șantier, prezentări concept.",required_skills:["Desen tehnic","Gândire spațială","Creativitate","Matematică","Software CAD"],warnings:["6 ani de studiu integrat","Acreditare OAR necesară","Perioade intense la deadline-uri"],faculties:[{name:"Univ. de Arhitectură Ion Mincu",city:"București",faculty:"Facultatea de Arhitectură",duration:"6 ani",admission_type:"Examen aptitudini (desen+geometrie)",notes:"Singura universitate dedicată arhitecturii"},{name:"Univ. Tehnică",city:"Cluj-Napoca",faculty:"Fac. Arhitectură și Urbanism",duration:"6 ani",admission_type:"Examen aptitudini artistice",notes:"Puternică, bine integrată în comunitate"},{name:"Univ. Politehnica",city:"Timișoara",faculty:"Fac. Arhitectură și Urbanism",duration:"6 ani",admission_type:"Examen aptitudini",notes:"Program acreditat european"}]},
+lawyer:{name:"Jurist / Avocat",domain:"Drept & Juridic",emoji:"⚖️",salary_ro:"4.000–15.000 RON/lună",market_outlook:"Moderat",education_path:"4 ani Drept + 2 ani Stagiu Barou",description:"Aplici legea pentru a apăra drepturi, redacta contracte și reprezenta clienți în instanță sau consilia companii.",daily_life:"Consultații juridice, redactare documente legale, cercetare legislativă, pledoarii în instanță.",required_skills:["Gândire logică","Comunicare","Memorie","Negociere","Engleză juridică"],warnings:["Piața saturată pentru generaliști","Stagiu 2 ani + examen barou","Stres ridicat în litigii"],faculties:[{name:"Univ. din București",city:"București",faculty:"Facultatea de Drept",duration:"4 ani",admission_type:"Examen propriu (Logică + Română)",notes:"Cea mai prestigioasă facultate de drept"},{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Facultatea de Drept",duration:"4 ani",admission_type:"Dosar cu media Bac",notes:"Renumită, predare și în limbile minorităților"},{name:"Univ. Al. Ioan Cuza",city:"Iași",faculty:"Facultatea de Drept",duration:"4 ani",admission_type:"Dosar cu media Bac",notes:"Tradiție de 150+ ani, calitate academică excelentă"}]},
+marketing:{name:"Specialist Marketing",domain:"Marketing & Comunicare",emoji:"📱",salary_ro:"4.000–11.000 RON/lună",market_outlook:"Bun",education_path:"3 ani · Marketing / ASE",description:"Construiești brandul unei companii, gestionezi campanii publicitare și analizezi comportamentul consumatorilor.",daily_life:"Creare conținut social media, analize campanii, ședințe strategie, coordonare agenții, raportare KPI.",required_skills:["Creativitate","Comunicare","Analiză date","Social media","Copywriting"],warnings:["Algoritmi în continuă schimbare","Presiune pentru rezultate rapide","Burnout frecvent în agenții"],faculties:[{name:"Academia de Studii Economice",city:"București",faculty:"Facultatea de Marketing",duration:"3 ani",admission_type:"Examen propriu",notes:"Cea mai bună facultate de marketing din România"},{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Business",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Programe în engleză disponibile"},{name:"Univ. de Vest",city:"Timișoara",faculty:"Fac. Economie și Administrarea Afacerilor",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Mediu modern, stagii la companii locale"}]},
+teacher:{name:"Profesor / Cadru Didactic",domain:"Educație",emoji:"📚",salary_ro:"3.500–7.000 RON/lună",market_outlook:"Stabil",education_path:"3 ani Licență + 1 an DPPD",description:"Formezi generații de tineri, transmiți cunoștințe și valori, ghidezi dezvoltarea intelectuală a elevilor.",daily_life:"Ore de predare, pregătire lecții, evaluare lucrări, comunicare cu părinți, activități extracurriculare.",required_skills:["Comunicare","Răbdare","Empatie","Cunoaștere aprofundată","Creativitate pedagogică"],warnings:["Salarizare modestă față de efort","Birocrație administrativă mare","Burnout frecvent"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Psihologie și Știinte ale Educației",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Cel mai bun program de pedagogie"},{name:"Univ. din București",city:"București",faculty:"Fac. Psihologie și Educație",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Combinat cu specializarea în materia aleasă"},{name:"Univ. Ștefan cel Mare",city:"Suceava",faculty:"Fac. Stiinte ale Educației",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Regiune cu deficit de cadre, angajare ușoară"}]},
+financial_analyst:{name:"Analist Financiar",domain:"Finanțe & Banking",emoji:"💹",salary_ro:"5.000–15.000 RON/lună",market_outlook:"Bun",education_path:"3-4 ani · Finanțe / Economie",description:"Analizezi date financiare, evaluezi investiții și consiliezi în decizii economice majore.",daily_life:"Analiză situații financiare, modele Excel, ședințe cu clienții, rapoarte management, monitorizare piețe.",required_skills:["Matematică","Excel avansat","Gândire analitică","Engleză financiară"],warnings:["Stres mare în perioade de criză","Ore lungi în banking investiții","Certificări costisitoare (CFA)"],faculties:[{name:"Academia de Studii Economice",city:"București",faculty:"Fac. Finanțe, Asigurări, Bănci și Burse",duration:"3 ani",admission_type:"Examen propriu",notes:"Nr.1 în finanțe, recunoscut internațional"},{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Economie și Gestiunea Afacerilor",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Program în engleză disponibil"},{name:"Univ. de Vest",city:"Timișoara",faculty:"Fac. Economie și Administrarea Afacerilor",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Programe competitive, taxe accesibile"}]},
+civil_engineer:{name:"Inginer Civil",domain:"Inginerie & Construcții",emoji:"🏗️",salary_ro:"5.000–12.000 RON/lună",market_outlook:"Excelent",education_path:"4 ani · Construcții Civile",description:"Proiectezi și supervizezi construcția de poduri, clădiri, drumuri și infrastructură.",daily_life:"Proiectare tehnică, calcule rezistență, vizite șantier, coordonare echipe, obținere avize.",required_skills:["Matematică","Fizică","AutoCAD","Rezistența materialelor"],warnings:["Muncă pe teren în orice condiții","Responsabilitate juridică mare","Birocrație și inspecții"],faculties:[{name:"Univ. Tehnică",city:"Cluj-Napoca",faculty:"Facultatea de Construcții",duration:"4 ani",admission_type:"Examen propriu (Mat+Fiz)",notes:"Una din cele mai bune, proiecte practice incluse"},{name:"Univ. Politehnica",city:"București",faculty:"Facultatea de Construcții",duration:"4 ani",admission_type:"Examen propriu",notes:"Cea mai mare, rețea națională solidă"},{name:"Univ. Politehnica",city:"Timișoara",faculty:"Fac. Construcții și Arhitectură",duration:"4 ani",admission_type:"Examen propriu",notes:"Puternică în vest, stagii în Austria și Germania"}]},
+graphic_designer:{name:"Designer Grafic",domain:"Design & Artă Vizuală",emoji:"✏️",salary_ro:"4.000–10.000 RON/lună",market_outlook:"Bun",education_path:"3-4 ani · Arte și Design Grafic",description:"Creezi identități vizuale, ilustrații, materiale de brand și conținut digital.",daily_life:"Lucru în Adobe Suite, prezentare concepte, revizuire după feedback, livrare fișiere finale.",required_skills:["Creativitate","Adobe Suite","Tipografie","Teoria culorilor","Sensibilitate estetică"],warnings:["Feedback subiectiv și clienți dificili","Freelancing implică instabilitate"],faculties:[{name:"Univ. de Arte și Design",city:"Cluj-Napoca",faculty:"Secția Design Grafic",duration:"4 ani",admission_type:"Examen aptitudini artistice",notes:"Cea mai bună școală de design din România"},{name:"Univ. Natională de Arte",city:"București",faculty:"Secția Design Grafic",duration:"4 ani",admission_type:"Examen aptitudini artistice",notes:"Tradiție solidă, alumni activi în industrie"},{name:"Univ. de Artă și Design",city:"Timișoara",faculty:"Arte Plastice și Design",duration:"4 ani",admission_type:"Portofoliu + interviu",notes:"Mediu creativ, colaborări cu agenții locale"}]},
+cybersecurity:{name:"Specialist Cybersecurity",domain:"IT & Securitate",emoji:"🔐",salary_ro:"9.000–22.000 RON/lună",market_outlook:"Excelent",education_path:"3-4 ani Informatică + certificări",description:"Protejezi sisteme informatice de atacuri cibernetice, testezi vulnerabilități și implementezi soluții de securitate.",daily_life:"Monitoring sisteme, pentesting, analiză amenințări, configurare firewall-uri, răspuns la incidente.",required_skills:["Programare","Rețelistică","Gândire adversarială","Atenție la detalii"],warnings:["Evoluție extrem de rapidă a amenințărilor","Certificări costisitoare (CISSP, CEH)"],faculties:[{name:"Univ. Politehnica",city:"București",faculty:"Fac. Electronică, Telecomunicații și IT",duration:"4 ani",admission_type:"Examen propriu",notes:"Profil tehnic puternic"},{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Matematică și Informatică",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Baza matematică solidă necesară în securitate"},{name:"Univ. Tehnică",city:"Cluj-Napoca",faculty:"Fac. Electronică, Telecomunicații și TI",duration:"4 ani",admission_type:"Examen propriu",notes:"Laborator de cybersecurity dedicat"}]},
+ai_engineer:{name:"Inginer AI / ML",domain:"Inteligență Artificială",emoji:"🤖",salary_ro:"10.000–25.000 RON/lună",market_outlook:"Excelent",education_path:"4 ani Informatică + Master AI",description:"Construiești sisteme de inteligență artificială: modele de recunoaștere, NLP, sisteme de recomandare.",daily_life:"Antrenare modele ML, preprocesare date, evaluare performanță, optimizare algoritmi, deployment.",required_skills:["Matematică avansată","Python","Machine Learning","Statistică"],warnings:["Barieră de intrare înaltă","Concurență internațională","Domeniu în schimbare rapidă"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Matematică și Informatică",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Master AI excelent, colaborări cu companii tech"},{name:"Univ. Politehnica",city:"București",faculty:"Fac. Automatică și Calculatoare",duration:"4 ani",admission_type:"Examen propriu",notes:"Program solid AI"},{name:"Univ. de Vest",city:"Timișoara",faculty:"Fac. Matematică și Informatică",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Profesori activi în cercetare AI"}]},
+pharmacist:{name:"Farmacist",domain:"Sănătate & Farmacie",emoji:"💊",salary_ro:"5.000–12.000 RON/lună",market_outlook:"Excelent",education_path:"5 ani · Farmacie (program integrat)",description:"Prepari și eliberezi medicamente, consiliezi pacienții privind tratamentele, verifici interacțiunile medicamentoase.",daily_life:"Eliberare rețete, consiliere pacienți, verificare stocuri, colaborare cu medicii.",required_skills:["Chimie","Biologie","Atenție la detalii","Comunicare","Empatie"],warnings:["5 ani de studiu intensiv","Responsabilitate mare pentru sănătatea pacienților"],faculties:[{name:"UMF Cluj-Napoca",city:"Cluj-Napoca",faculty:"Facultatea de Farmacie",duration:"5 ani",admission_type:"Examen propriu (Chimie+Bio)",notes:"Top facultate, recunoscută european"},{name:"UMF Carol Davila",city:"București",faculty:"Facultatea de Farmacie",duration:"5 ani",admission_type:"Examen propriu",notes:"Cea mai mare facultate de farmacie"},{name:"UMF Victor Babeș",city:"Timișoara",faculty:"Facultatea de Farmacie",duration:"5 ani",admission_type:"Examen propriu",notes:"Recunoscută internațional"}]},
+biologist:{name:"Biolog / Cercetător",domain:"Biologie & Știință",emoji:"🧬",salary_ro:"4.000–9.000 RON/lună",market_outlook:"Moderat",education_path:"3 ani Biologie + 2 ani Master",description:"Studiezi lumea vie la nivel molecular sau de ecosistem, lucrând în laboratoare de cercetare sau industria farmaceutică.",daily_life:"Experimente laborator, analiză probe, redactare rapoarte științifice, colaborare interdisciplinară.",required_skills:["Biologie","Chimie","Rigurozitate","Răbdare","Gândire experimentală"],warnings:["Cercetarea pură slab finanțată în România","Multe poziții necesită doctorat"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Biologie și Geologie",duration:"3 ani",admission_type:"Dosar cu media Bac (Biologie)",notes:"Cel mai bun program de biologie din România"},{name:"Univ. din București",city:"București",faculty:"Facultatea de Biologie",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Laboratoare bine echipate"},{name:"Univ. Al. Ioan Cuza",city:"Iași",faculty:"Facultatea de Biologie",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Centre de cercetare active"}]},
+social_worker:{name:"Asistent Social",domain:"Asistență Socială",emoji:"🌍",salary_ro:"3.500–6.500 RON/lună",market_outlook:"Bun",education_path:"3 ani · Asistență Socială",description:"Sprijini persoane vulnerabile conectându-le cu resurse și servicii de suport.",daily_life:"Vizite la domiciliu, evaluări de caz, plan de intervenție, colaborare autorități, rapoarte.",required_skills:["Empatie","Răbdare","Comunicare","Rezistență emoțională"],warnings:["Salarizare modestă în sistemul public","Cazuri emoțional epuizante"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Sociologie și Asistență Socială",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Cel mai bun program de asistență socială"},{name:"Univ. din București",city:"București",faculty:"Fac. Sociologie și Asistență Socială",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Legătură puternică cu ONG-urile"},{name:"Univ. de Vest",city:"Timișoara",faculty:"Fac. Sociologie și Psihologie",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Practică extensivă în servicii sociale"}]},
+environmental:{name:"Specialist Mediu / Ecolog",domain:"Mediu & Sustenabilitate",emoji:"🌿",salary_ro:"4.000–9.000 RON/lună",market_outlook:"Bun",education_path:"3-4 ani · Știința Mediului / Ecologie",description:"Monitorizezi și protejezi ecosistemele, evaluezi impactul activităților umane și consiliezi companii privind normele de mediu.",daily_life:"Prelevare probe din teren, analize laborator, rapoarte de impact, colaborare autorități.",required_skills:["Biologie","Chimie","Ecologie","Analiză date","Muncă pe teren"],warnings:["Joburi depind de finanțare UE","Muncă pe teren în orice condiții"],faculties:[{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Biologie și Geologie — Ecologie",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Cel mai bun program de ecologie"},{name:"Univ. din București",city:"București",faculty:"Fac. Biologie — Ecologie",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Colaborare cu Institutul de Biologie"},{name:"Univ. Ștefan cel Mare",city:"Suceava",faculty:"Fac. Silvicultură — Ingineria Mediului",duration:"4 ani",admission_type:"Dosar cu media Bac",notes:"Excelent pentru ecologie forestieră"}]},
+journalist:{name:"Jurnalist / Creator Conținut",domain:"Media & Comunicare",emoji:"🎙️",salary_ro:"3.500–9.000 RON/lună",market_outlook:"Moderat",education_path:"3 ani · Jurnalism / Comunicare",description:"Investighezi, documentezi și comunici informații relevante publicului prin text, audio sau video.",daily_life:"Documentare, interviuri, redactare articole, editare, publicare, monitorizare trending.",required_skills:["Scris excelent","Curiozitate","Investigare","Comunicare","Limbi străine"],warnings:["Piața media în transformare digitală","Precaritate în presa independentă"],faculties:[{name:"Univ. din București",city:"București",faculty:"Fac. Jurnalism și Știintele Comunicării",duration:"3 ani",admission_type:"Dosar cu media Bac + eseu",notes:"Cea mai renumită facultate de jurnalism"},{name:"Univ. Babeș-Bolyai",city:"Cluj-Napoca",faculty:"Fac. Jurnalism și Comunicare",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Studenți activi în media clujeană"},{name:"Univ. de Vest",city:"Timișoara",faculty:"Fac. Știinte Politice și Comunicare",duration:"3 ani",admission_type:"Dosar cu media Bac",notes:"Practică integrată în program"}]},
+};
+
+const ALL_IDS=Object.keys(DB);
+
+// ── LOCAL RIASEC MATCHING ─────────────────────────────────────────────────────
+const CAREER_WEIGHTS={
+software_dev:    {R:1,I:5,A:1,S:1,E:2,C:4},
+data_scientist:  {R:1,I:5,A:1,S:1,E:2,C:5},
+ux_designer:     {R:1,I:3,A:5,S:3,E:2,C:2},
+medic:           {R:3,I:4,A:1,S:5,E:2,C:3},
+psychologist:    {R:1,I:3,A:2,S:5,E:2,C:2},
+architect:       {R:3,I:3,A:5,S:2,E:2,C:3},
+lawyer:          {R:1,I:3,A:2,S:3,E:5,C:4},
+marketing:       {R:1,I:2,A:4,S:3,E:5,C:2},
+teacher:         {R:1,I:3,A:3,S:5,E:3,C:2},
+financial_analyst:{R:1,I:4,A:1,S:1,E:3,C:5},
+civil_engineer:  {R:5,I:4,A:2,S:1,E:2,C:4},
+graphic_designer:{R:2,I:2,A:5,S:2,E:2,C:3},
+cybersecurity:   {R:3,I:5,A:1,S:1,E:3,C:4},
+ai_engineer:     {R:2,I:5,A:2,S:1,E:2,C:4},
+pharmacist:      {R:2,I:4,A:1,S:4,E:2,C:4},
+biologist:       {R:3,I:5,A:2,S:2,E:1,C:3},
+social_worker:   {R:1,I:2,A:2,S:5,E:3,C:2},
+environmental:   {R:4,I:4,A:2,S:3,E:2,C:3},
+journalist:      {R:1,I:3,A:4,S:3,E:4,C:2},
+};
+
+function localAnalyze(riasecPct){
+  const scored=ALL_IDS.map(id=>{
+    const w=CAREER_WEIGHTS[id]||{R:2,I:2,A:2,S:2,E:2,C:2};
+    let score=0,max=0;
+    Object.entries(w).forEach(([c,wt])=>{score+=(riasecPct[c]/100)*wt;max+=wt;});
+    return{id,pct:Math.round((score/max)*100)};
+  });
+  scored.sort((a,b)=>b.pct-a.pct);
+  const top5=scored.slice(0,5);
+  const sortedR=Object.entries(riasecPct).sort((a,b)=>b[1]-a[1]);
+  const dom=sortedR[0][0];
+  const summaries={
+    R:"Profil practic: dai randament maxim în roluri concrete, hands-on, cu rezultate vizibile.",
+    I:"Profil analitic: excelezi în cercetare, rezolvare de probleme complexe și gândire sistemică.",
+    A:"Profil creativ: talentul tău estetic și dorința de expresie originală sunt atuuri reale.",
+    S:"Profil social: empatia și orientarea spre oameni fac din tine un partener valoros.",
+    E:"Profil antreprenorial: ambiția, leadership-ul și persuasiunea sunt calitățile tale definitorii.",
+    C:"Profil organizat: rigoarea, precizia și atenția la detalii te fac indispensabil în orice echipă.",
+  };
+  const fitMap={
+    R:"Aliniată cu profilul tău practic și tehnic",
+    I:"Potrivită gândirii tale analitice",
+    A:"Valorifică creativitatea ta naturală",
+    S:"Răspunde orientării tale spre oameni",
+    E:"Îți pune în valoare ambiția și leadership-ul",
+    C:"Valorifică rigoarea și organizarea ta",
+  };
+  return{
+    profile_summary:(summaries[dom]||summaries.I)+" Acest profil deschide oportunități valoroase în mai multe domenii.",
+    dominant_traits:sortedR.slice(0,3).map(([k])=>RIASEC_META[k].name),
+    riasec_profile:riasecPct,
+    matches:top5.map(m=>{
+      const w=CAREER_WEIGHTS[m.id]||{};
+      const domCat=Object.entries(w).sort((a,b)=>b[1]-a[1])[0]?.[0]||"I";
+      return{id:m.id,pct:m.pct,fit:fitMap[domCat]||"Potrivire cu profilul tău RIASEC"};
+    }),
+    roadmap:ROADMAP_DB[DOMAIN_CAT[top5[0].id]]||ROADMAP_DB.IT,
+    isOffline:true,
+  };
+}
+
+// ── QUIZ DATA ─────────────────────────────────────────────────────────────────
+const RIASEC_DATA=[
+{cat:"R",label:"Practic",icon:"🔧",color:"#f59e0b",questions:["Îmi place să lucrez cu unelte, mașini sau echipamente tehnice","Prefer activitățile fizice și lucrul efectiv cu mâinile","Mă atrag meseriile practice: construcție, electricitate, mecanică"]},
+{cat:"I",label:"Analitic",icon:"🔬",color:"#3b82f6",questions:["Îmi place să rezolv probleme complexe și să analizez date","Citesc articole de știință sau tehnologie din curiozitate proprie","Mă fascinează să înțeleg în profunzime cum funcționează lucrurile"]},
+{cat:"A",label:"Creativ",icon:"🎨",color:"#8b5cf6",questions:["Îmi place să creez: scriu, desenez, fac muzică sau alte arte","Prefer libertatea de exprimare față de reguli și proceduri stricte","Estetica, designul și frumusețea contează enorm pentru mine"]},
+{cat:"S",label:"Social",icon:"🤝",color:"#10b981",questions:["Îmi place să ajut, să consiliez sau să predau altora","Empatia și înțelegerea profundă a oamenilor sunt punctele mele forte","Mă simt împlinit când contribui direct la bunăstarea altora"]},
+{cat:"E",label:"Antreprenorial",icon:"🚀",color:"#ef4444",questions:["Îmi place să conduc, să persuadez și să îmi asum riscuri calculate","Vreau să construiesc ceva propriu sau să am o funcție de conducere","Mă motivează competiția, ambițiile mari și depășirea obiectivelor"]},
+{cat:"C",label:"Organizat",icon:"📊",color:"#06b6d4",questions:["Prefer ordinea, structura și procedurile bine definite","Îmi place să lucrez cu date, cifre, registre și evidențe","Precizia și atenția la detalii sunt printre cele mai mari calități ale mele"]},
+];
+const RIASEC_FLAT=RIASEC_DATA.flatMap(r=>r.questions.map((q,i)=>({id:`${r.cat}${i}`,cat:r.cat,text:q,label:r.label,color:r.color,icon:r.icon})));
+const VALUES_DATA=[
+{id:"financial",label:"Stabilitate financiară",desc:"Salariu mare, job sigur pe termen lung",icon:"💰"},
+{id:"creativity",label:"Creativitate",desc:"Libertate de expresie și proiecte originale",icon:"🎨"},
+{id:"social",label:"Impact social",desc:"Ajutorul comunității și schimbarea pozitivă",icon:"🌍"},
+{id:"advancement",label:"Avansare rapidă",desc:"Carieră ascendentă, statut și recunoaștere",icon:"📈"},
+{id:"balance",label:"Echilibru viață-muncă",desc:"Timp pentru familie, hobby-uri și odihnă",icon:"⚖️"},
+{id:"innovation",label:"Inovație & cercetare",desc:"Tehnologii noi, descoperiri, R&D",icon:"🔬"},
+{id:"autonomy",label:"Autonomie",desc:"Decizii proprii, libertate, antreprenoriat",icon:"🦅"},
+{id:"human",label:"Relații umane",desc:"Contact constant cu oameni, conexiuni profunde",icon:"❤️"},
+];
+const WORKSTYLE_DATA=[
+{id:"team",q:"Cum preferi să lucrezi?",icon:"👥",opts:["Singur, complet independent","Echipă mică (2–5 persoane)","Echipă mare și dinamică","Flexibil — depinde de proiect"]},
+{id:"env",q:"Care este mediul de lucru ideal pentru tine?",icon:"🏢",opts:["Birou modern / interior","Teren / în natură / exterior","Remote complet (de acasă)","Hibrid sau cu deplasări frecvente"]},
+{id:"activity",q:"Ce tip de activitate te energizează cel mai mult?",icon:"⚡",opts:["Analiză, cercetare, rezolvare probleme","Creație, design, storytelling","Comunicare, vânzări, relații","Organizare, coordonare, management"]},
+{id:"stress",q:"Cum te raportezi la presiune și stres?",icon:"🧘",opts:["Prefer liniștea — stresul mă blochează","Suport stres moderat, situational","Stresul mă motivează să performez mai bine","Iubesc adrenalina și situațiile-limită"]},
+];
+const SKILLS_DATA=["📐 Matematică","⚗️ Chimie","🔭 Fizică","🧬 Biologie","💻 Informatică / Programare","📝 Literatură & Scriere","🌐 Limbi străine","🎨 Arte vizuale / Design","🎵 Muzică","🎤 Comunicare & prezentări","📋 Organizare & planificare","🔨 Lucru tehnic / manual","🏃 Sport & coordonare fizică","💙 Empatie & ascultare","👑 Leadership & persuasiune","📊 Economie & afaceri","🧠 Psihologie & comportament","🌿 Geografie & mediu"];
+const RIASEC_META={R:{name:"Practic",color:"#f59e0b"},I:{name:"Analitic",color:"#3b82f6"},A:{name:"Creativ",color:"#8b5cf6"},S:{name:"Social",color:"#10b981"},E:{name:"Antreprenorial",color:"#ef4444"},C:{name:"Organizat",color:"#06b6d4"}};
+const OUTLOOK_COLORS={"Excelent":{color:"#059669",bg:"#d1fae5"},"Bun":{color:"#2563eb",bg:"#dbeafe"},"Stabil":{color:"#7c3aed",bg:"#ede9fe"},"Moderat":{color:"#d97706",bg:"#fef3c7"},"Dificil":{color:"#dc2626",bg:"#fee2e2"}};
+const DOMAIN_CAT={software_dev:"IT",data_scientist:"IT",cybersecurity:"IT",ai_engineer:"IT",ux_designer:"Design",graphic_designer:"Design",medic:"Sanatate",psychologist:"Sanatate",pharmacist:"Sanatate",architect:"Arhitectura",civil_engineer:"Inginerie",lawyer:"Drept",marketing:"Business",financial_analyst:"Business",teacher:"Educatie",social_worker:"Educatie",journalist:"Media",biologist:"Stiinta",environmental:"Stiinta"};
+const ROADMAP_DB={
+IT:{now:["Instalează Python sau JavaScript și urmărește tutoriale pe freeCodeCamp (gratuit)","Creează un cont GitHub și publică primul proiect, oricât de simplu","Rezolvă exerciții zilnice pe HackerRank sau Codewars pentru logică"],this_year:["Finalizează un curs complet online de programare (Coursera, Udemy, Codecademy)","Participă la un hackathon sau concurs de informatică pentru elevi","Construiește 2-3 proiecte mici pentru portofoliu pe GitHub"],before_bac:["Obține note bune la Matematică și Informatică — esențiale la admitere","Aplică la un internship de vară într-o firmă IT, chiar și neplătit","Vizitează zilele porților deschise la Babeș-Bolyai, Politehnica sau UVT"],after_bac:["Aplică la facultăți de top: Babeș-Bolyai Cluj, Politehnica București sau UVT Timișoara","Alătură-te asociațiilor studențești IT (ASMI, LSAC etc.)","Continuă să înveți și contribuie la proiecte open-source din primul an"]},
+Design:{now:["Descarcă Figma gratuit și exersează redesign-uri de interfețe cunoscute","Creează un profil pe Behance și postează primele lucrări, oricât de simple","Urmărește designeri români și internaționali pe Instagram pentru inspirație"],this_year:["Construiește un portofoliu cu 5-8 lucrări de calitate (calitate, nu cantitate)","Participă la concursuri de design pentru tineri","Învață Adobe Illustrator și Photoshop — standard în industrie"],before_bac:["Pregătește portofoliu de aptitudini artistice — obligatoriu la admitere","Vizitează UAD Cluj-Napoca și UNA București pentru a compara","Practică desenul la mână liberă zilnic — baza oricărui examen de arte"],after_bac:["Aplică la UAD Cluj-Napoca sau UNA București cu portofoliu temeinic pregătit","Freelancează pentru clienți mici din primul an — experiența practică e crucială","Conectează-te cu comunitatea creativă locală"]},
+Sanatate:{now:["Concentrează-te intens pe Biologie și Chimie — pilonii admiterii la medicină","Urmărește canale YouTube de anatomie și medicină pentru a vedea dacă domeniul te pasionează","Vizitează un spital sau o clinică pentru a înțelege realitatea zilnică"],this_year:["Pregătește-te pentru olimpiadele de biologie — performanța ajută la admitere","Ia meditații sau urmărește cursuri online de biologie și chimie avansate","Documentează-te despre UMF Cluj, Carol Davila București și Victor Babeș Timișoara"],before_bac:["Nota la Bac la Biologie și Chimie este crucială — prioritate maximă","Ia în calcul un an pregătitor dacă media nu e suficientă","Gândește-te și la alternativele: Farmacie, Stomatologie, Kinetoterapie"],after_bac:["Aplică la UMF-ul ales și pregătește-te intensiv pentru examenul de admitere","Fă voluntariat în spitale sau ONG-uri medicale din primul an","Gândește-te din timp la specialitatea dorită — rezidențiatul se alege după 6 ani"]},
+Drept:{now:["Antrenează-te să argumentezi pro și contra pe orice subiect — esența avocaturii","Înscrie-te în clubul de dezbateri al liceului sau creează unul dacă nu există","Citește zilnic știri și urmărește dezbateri parlamentare sau procese celebre"],this_year:["Participă la simulări de procese (moot court) organizate de facultăți de drept","Citește cel puțin 2 cărți de drept sau romane juridice accesibile","Exersează redactarea textelor argumentative la română"],before_bac:["Română și Logică sunt esențiale la admitere","Vizitează facultățile de drept din București, Cluj și Iași","Urmărește avocați activi pe social media pentru a înțelege realitatea profesiei"],after_bac:["Aplică la facultăți de drept de top: București, Babeș-Bolyai Cluj sau Al. I. Cuza Iași","Din primul an încearcă să intri ca intern la o casă de avocatură","Decide din timp direcția: avocatură, magistratură, juridic corporativ sau notariat"]},
+Business:{now:["Citește Tată bogat, tată sărac și urmărește podcasturi de antreprenoriat românesc","Participă la competiții de business pentru elevi (Junior Achievement, Olimpiada de economie)","Urmărește piața bursieră și încearcă un cont demo de trading gratuit"],this_year:["Lansează un micro-proiect antreprenorial: vinde ceva, oferă un serviciu","Învață Excel avansat și bazele analizei de date — esențial în business","Construiește un profil LinkedIn profesional"],before_bac:["Matematică este esențială la admitere la ASE — prioritate maximă","Documentează-te despre ASE București, Babeș-Bolyai Cluj și alte universități","Participă la un stagiu de practică într-o firmă sau start-up"],after_bac:["Aplică la ASE București (nr.1 în economie) sau Babeș-Bolyai Cluj","Din primul an participă la competiții naționale de business","Construiește activ rețeaua profesională — în business conexiunile sunt la fel de valoroase ca diploma"]},
+Educatie:{now:["Fii voluntar ca tutor pentru colegii mai mici — cea mai bună practică pedagogică","Observă stilurile de predare ale profesorilor tăi: ce funcționează și ce nu","Decide ce materie ai vrea să predai și aprofundează-o"],this_year:["Participă la activități de peer-tutoring sau mentorat organizate de liceu","Urmărește conferințe TEDx despre educație și inovație pedagogică","Citește despre sisteme educaționale de succes: Finlanda, Estonia, Singapore"],before_bac:["Toate materiile contează — ai nevoie de licență în domeniu + modul pedagogic DPPD","Informează-te despre salarizare, gradații și posibilitățile reale de avansare","Vizitează școli pentru a vedea condițiile reale de muncă"],after_bac:["Aplică la facultatea din domeniul materiei alese + modulul DPPD în paralel","Din primul an fă practică pedagogică","Implică-te în proiecte educaționale europene (Erasmus+) pentru experiență și burse"]},
+Media:{now:["Începe un blog, vlog sau cont de social media dedicat unui subiect care te pasionează","Citește zilnic 3 surse media diferite și compară cum prezintă același eveniment","Exersează scrisul: 300 de cuvinte pe zi despre orice subiect"],this_year:["Scrie pentru ziarul sau revista liceului — sau înființa una dacă nu există","Urmărește jurnaliști de investigație români (Recorder, PressOne) ca model","Învață editare video și audio la nivel de bază"],before_bac:["Română excelentă este esențială — stilul de scriere se formează în liceu","Construiește un portofoliu de articole sau materiale video publicate","Vizitează redacții de ziare sau televiziuni pentru a vedea realitatea domeniului"],after_bac:["Aplică la Jurnalism București sau Babeș-Bolyai Cluj cu portofoliu pregătit","Din primul an contribuie la publicații studențești","Specializează-te într-un domeniu — generaliștii au mai greu"]},
+Inginerie:{now:["Aprofundează Matematica și Fizica — fundația oricărei cariere de inginerie","Construiește proiecte practice: electronică, robotică sau mecanică","Urmărește canale YouTube de inginerie (Practical Engineering, Real Engineering)"],this_year:["Înscrie-te în cluburi de robotică sau construcție (FRC, WRO, RoboChallenge)","Participă la olimpiadele de fizică și matematică","Vizitează șantiere de construcție, fabrici sau uzine"],before_bac:["Matematică și Fizică la Bac sunt obligatorii și esențiale la admitere","Decide ramura: construcții civile, mecanică, electrică, automatică","Ingineria civilă și cea electrică sunt extrem de căutate în România"],after_bac:["Aplică la UTCluj, Politehnica București sau Politehnica Timișoara","Caută stagii de practică pe șantier sau în fabrică din primul an","Certificările profesionale specifice îți vor crește semnificativ salariul"]},
+Stiinta:{now:["Aprofundează Biologia și Chimia — mergi dincolo de programa școlară","Citește reviste de știință accesibile: National Geographic, Știință și Tehnică","Participă la olimpiadele de biologie sau chimie"],this_year:["Găsește un profesor dispus să te ghideze într-un mic proiect de cercetare","Vizitează institute de cercetare în zilele porților deschise","Urmărește canale YouTube de știință (Veritasium, Kurzgesagt)"],before_bac:["Biologie și Chimie la Bac sunt esențiale","Documentează-te despre carierele concrete: cercetare, industrie farmaceutică, mediu","Ia în calcul posibilitatea unui doctorat — în știință titlul PhD deschide mai multe uși"],after_bac:["Aplică la Babeș-Bolyai Cluj (biologie nr.1) sau facultăți de profil din București sau Iași","Caută programe Erasmus din primul an","Urmărește granturi și burse de cercetare pentru studenți (UEFISCDI, Marie Curie)"]},
+Arhitectura:{now:["Exersează desenul tehnic și perspectiva zilnic — baza examenului de admitere","Fotografiază și analizează clădiri interesante din orașul tău","Urmărește arhitecți celebri pe Instagram"],this_year:["Pregătește-te intens pentru examen: desen la mână liberă și geometrie descriptivă","Vizitează case open-house și expoziții de arhitectură","Încearcă AutoCAD sau SketchUp la nivel de bază"],before_bac:["Examenul de aptitudini artistice este cel mai important obstacol — antrenează-te zilnic","Vizitează Ion Mincu București și UTCluj pentru a simți atmosfera","Matematică și Fizică sunt necesare pentru calculele structurale"],after_bac:["Aplică la Ion Mincu București (nr.1 în România) sau UTCluj","Din primul an participă la concursuri de arhitectură studențești","Fă practică la un birou de arhitectură din primii ani"]},
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const darkWrap={minHeight:"100vh",background:"linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%)",fontFamily:"'Inter',-apple-system,sans-serif"};
+const btnPrimary={background:"linear-gradient(135deg,#4f46e5,#7c3aed)",border:"none",borderRadius:12,padding:"14px 36px",color:"#fff",cursor:"pointer",fontSize:16,fontWeight:800,boxShadow:"0 6px 24px rgba(79,70,229,0.4)"};
+const btnBack={background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,padding:"10px 22px",color:"rgba(255,255,255,0.7)",cursor:"pointer",fontSize:14,fontWeight:600};
+
+// ── QR CODE COMPONENT ─────────────────────────────────────────────────────────
+function QRCode(){
+  const url=window.location.href.split("?")[0];
+  const isLocal=url.includes("localhost")||url.includes("127.0.0.1")||url.startsWith("file:");
+  if(isLocal)return null;
+  const qrSrc=`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(url)}&bgcolor=ffffff&color=1e1b4b&margin=8`;
+  return(
+    <div style={{position:"fixed",top:16,right:16,zIndex:100,background:"rgba(255,255,255,0.95)",borderRadius:16,padding:12,boxShadow:"0 8px 32px rgba(0,0,0,0.25)",textAlign:"center",backdropFilter:"blur(10px)"}}>
+      <img src={qrSrc} alt="QR Code" style={{width:90,height:90,borderRadius:8,display:"block"}}/>
+      <div style={{fontSize:9,fontWeight:700,color:"#4f46e5",marginTop:4,letterSpacing:0.5}}>SCANEAZĂ</div>
+    </div>
+  );
+}
+
+// ── PROGRESS BAR ──────────────────────────────────────────────────────────────
+function ProgressBar({pct,section}){
+  const secs=["Interese","Valori","Stil de lucru","Abilități"];
+  return(
+    <div style={{padding:"16px 24px 0",background:"rgba(0,0,0,0.2)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+        {secs.map((s,i)=><span key={s} style={{fontSize:10,fontWeight:i<=section?700:400,color:i<=section?"#a78bfa":"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:1}}>{i<section?"✓ ":""}{s}</span>)}
+      </div>
+      <div style={{height:5,background:"rgba(255,255,255,0.1)",borderRadius:99}}>
+        <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#4f46e5,#7c3aed,#a78bfa)",borderRadius:99,transition:"width 0.4s ease"}}/>
+      </div>
+      <div style={{textAlign:"right",fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:4,marginBottom:8}}>{pct}% completat</div>
+    </div>
+  );
+}
+
+// ── WELCOME ───────────────────────────────────────────────────────────────────
+function Welcome({onStart}){
+  return(
+    <div style={{...darkWrap,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px",textAlign:"center",position:"relative"}}>
+      <QRCode/>
+      <div style={{fontSize:72,marginBottom:20}}>🎓</div>
+      <h1 style={{fontSize:36,fontWeight:900,margin:"0 0 8px",background:"linear-gradient(135deg,#a78bfa,#60a5fa,#34d399)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Navigator de Carieră</h1>
+      <p style={{fontSize:17,color:"rgba(255,255,255,0.5)",margin:"0 0 28px"}}>& Facultate · pentru elevii de liceu</p>
+      <p style={{fontSize:15,color:"rgba(255,255,255,0.75)",lineHeight:1.8,maxWidth:500,margin:"0 0 36px"}}>
+        Nu trebuie să ai răspunsuri clare — de aia ești aici. Completează evaluarea și vei primi <strong style={{color:"#a78bfa"}}>analiză personalizată</strong> cu cariere potrivite, facultăți din România și un plan de acțiune.
+      </p>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,maxWidth:460,marginBottom:40,width:"100%"}}>
+        {[{icon:"⏱️",bold:"~8 minute",sub:"Durată estimată"},{icon:"🎯",bold:"19 cariere",sub:"Baza de date locală"},{icon:"🇷🇴",bold:"Focus România",sub:"Universități locale"}].map(x=>(
+          <div key={x.bold} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:14,padding:14,textAlign:"center"}}>
+            <div style={{fontSize:24,marginBottom:6}}>{x.icon}</div>
+            <div style={{fontWeight:800,fontSize:12,color:"#fff"}}>{x.bold}</div>
+            <div style={{color:"rgba(255,255,255,0.4)",fontSize:10,marginTop:2}}>{x.sub}</div>
+          </div>
+        ))}
+      </div>
+      <button onClick={onStart} style={btnPrimary}>Începe evaluarea 🚀</button>
+      <p style={{color:"rgba(255,255,255,0.3)",fontSize:11,marginTop:16}}>Datele tale nu sunt stocate sau transmise nicăieri</p>
+    </div>
+  );
+}
+
+// ── LOADING ───────────────────────────────────────────────────────────────────
+function Loading({msg}){
+  const [d,setD]=useState("");
+  useEffect(()=>{const iv=setInterval(()=>setD(x=>x.length>=3?"":x+"."),500);return()=>clearInterval(iv);},[]);
+  return(
+    <div style={{...darkWrap,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,textAlign:"center"}}>
+      <div style={{fontSize:72,marginBottom:24,animation:"spin 4s linear infinite"}}>🧬</div>
+      <h2 style={{fontSize:24,fontWeight:800,color:"#fff",margin:"0 0 14px"}}>Analizăm profilul tău{d}</h2>
+      <p style={{fontSize:15,color:"rgba(255,255,255,0.6)",margin:"0 0 36px"}}>{msg}</p>
+      <div style={{display:"flex",gap:10}}>
+        {[0,1,2,3,4].map(i=><div key={i} style={{width:10,height:10,borderRadius:"50%",background:"#a78bfa",animation:`pulse 1.4s ${i*0.2}s infinite ease-in-out`}}/>)}
+      </div>
+    </div>
+  );
+}
+
+// ── QUIZ SCREENS ──────────────────────────────────────────────────────────────
+function RiasecScreen({q,current,onRate,onBack,pct,section,qNum}){
+  const LABELS=["Deloc","Puțin","Moderat","Mult","Foarte mult"];
+  return(
+    <div style={darkWrap}>
+      <ProgressBar pct={pct} section={section}/>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"28px 20px",minHeight:"85vh",textAlign:"center"}}>
+        <div style={{fontSize:52,marginBottom:12}}>{q.icon}</div>
+        <div style={{fontSize:11,fontWeight:800,color:q.color,textTransform:"uppercase",letterSpacing:2,marginBottom:10}}>{q.label} · Întrebarea {qNum} din {RIASEC_FLAT.length}</div>
+        <h2 style={{fontSize:20,fontWeight:700,maxWidth:440,lineHeight:1.6,margin:"0 0 36px",color:"#fff"}}>{q.text}</h2>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",maxWidth:520}}>
+          {LABELS.map((lbl,i)=>{const val=i+1,sel=current===val;return(
+            <button key={lbl} onClick={()=>onRate(val)} style={{background:sel?q.color:"rgba(255,255,255,0.07)",border:`2px solid ${sel?q.color:"rgba(255,255,255,0.15)"}`,borderRadius:14,padding:"11px 14px",color:"#fff",cursor:"pointer",fontWeight:sel?800:400,fontSize:12,transition:"all 0.2s",minWidth:84,transform:sel?"scale(1.06)":"scale(1)"}}>
+              <div style={{fontSize:18,marginBottom:4}}>{"⭐".repeat(val)}</div>{lbl}
+            </button>
+          );})}
+        </div>
+        {qNum>1&&<button onClick={onBack} style={{...btnBack,marginTop:28}}>← Înapoi</button>}
+      </div>
+    </div>
+  );
+}
+
+function ValuesScreen({selected,onToggle,onNext,onBack,pct,section}){
+  return(
+    <div style={darkWrap}>
+      <ProgressBar pct={pct} section={section}/>
+      <div style={{padding:"24px 20px",maxWidth:600,margin:"0 auto"}}>
+        <div style={{textAlign:"center",marginBottom:22}}><div style={{fontSize:44,marginBottom:10}}>💎</div><h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px",color:"#fff"}}>Ce contează cel mai mult pentru tine?</h2><p style={{color:"rgba(255,255,255,0.5)",margin:0,fontSize:14}}>Alege până la <strong style={{color:"#a78bfa"}}>3 valori</strong> care te definesc</p></div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:24}}>
+          {VALUES_DATA.map(v=>{const sel=selected.includes(v.id),dis=!sel&&selected.length>=3;return(
+            <button key={v.id} onClick={()=>!dis&&onToggle(v.id)} style={{background:sel?"rgba(167,139,250,0.2)":"rgba(255,255,255,0.05)",border:`2px solid ${sel?"#a78bfa":"rgba(255,255,255,0.1)"}`,borderRadius:14,padding:14,cursor:dis?"not-allowed":"pointer",textAlign:"left",color:"#fff",transition:"all 0.2s",opacity:dis?0.35:1,position:"relative"}}>
+              <div style={{fontSize:24,marginBottom:6}}>{v.icon}</div><div style={{fontWeight:700,fontSize:13,marginBottom:3}}>{v.label}</div><div style={{fontSize:11,color:"rgba(255,255,255,0.5)",lineHeight:1.4}}>{v.desc}</div>
+              {sel&&<div style={{position:"absolute",top:10,right:12,color:"#a78bfa",fontWeight:900}}>✓</div>}
+            </button>
+          );})}
+        </div>
+        <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+          <button onClick={onBack} style={btnBack}>← Înapoi</button>
+          <button onClick={onNext} disabled={selected.length===0} style={{...btnPrimary,opacity:selected.length>0?1:0.4,cursor:selected.length>0?"pointer":"not-allowed",padding:"12px 28px",fontSize:15}}>Continuă ({selected.length}/3) →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WorkStyleScreen({q,current,onSelect,onBack,pct,section,qNum}){
+  return(
+    <div style={darkWrap}>
+      <ProgressBar pct={pct} section={section}/>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"28px 20px",minHeight:"85vh"}}>
+        <div style={{fontSize:44,marginBottom:12}}>{q.icon}</div>
+        <div style={{fontSize:11,fontWeight:800,color:"#a78bfa",textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Stil de lucru · {qNum}/4</div>
+        <h2 style={{fontSize:20,fontWeight:700,maxWidth:440,lineHeight:1.6,margin:"0 0 26px",textAlign:"center",color:"#fff"}}>{q.q}</h2>
+        <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:440}}>
+          {q.opts.map(opt=>{const sel=current===opt;return(
+            <button key={opt} onClick={()=>onSelect(opt)} style={{background:sel?"rgba(167,139,250,0.2)":"rgba(255,255,255,0.06)",border:`2px solid ${sel?"#a78bfa":"rgba(255,255,255,0.12)"}`,borderRadius:12,padding:"14px 18px",cursor:"pointer",textAlign:"left",color:"#fff",fontWeight:sel?700:400,fontSize:14,transition:"all 0.2s"}}>{sel?"✓  ":""}{opt}</button>
+          );})}
+        </div>
+        <button onClick={onBack} style={{...btnBack,marginTop:22}}>← Înapoi</button>
+      </div>
+    </div>
+  );
+}
+
+function SkillsScreen({selected,onToggle,onFinish,onBack,pct,section}){
+  return(
+    <div style={darkWrap}>
+      <ProgressBar pct={pct} section={section}/>
+      <div style={{padding:"22px 20px",maxWidth:640,margin:"0 auto"}}>
+        <div style={{textAlign:"center",marginBottom:22}}><div style={{fontSize:44,marginBottom:10}}>💪</div><h2 style={{fontSize:22,fontWeight:800,margin:"0 0 6px",color:"#fff"}}>Abilitățile tale</h2><p style={{color:"rgba(255,255,255,0.5)",margin:0,fontSize:14}}>Selectează tot ce ți se potrivește — materii bune <em>sau</em> care îți plac</p></div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:9,marginBottom:28,justifyContent:"center"}}>
+          {SKILLS_DATA.map(s=>{const sel=selected.includes(s);return(
+            <button key={s} onClick={()=>onToggle(s)} style={{background:sel?"rgba(167,139,250,0.25)":"rgba(255,255,255,0.07)",border:`2px solid ${sel?"#a78bfa":"rgba(255,255,255,0.12)"}`,borderRadius:100,padding:"8px 16px",cursor:"pointer",color:"#fff",fontWeight:sel?700:400,fontSize:13,transition:"all 0.2s"}}>{s}</button>
+          );})}
+        </div>
+        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+          <button onClick={onBack} style={btnBack}>← Înapoi</button>
+          <button onClick={onFinish} disabled={selected.length===0} style={{...btnPrimary,opacity:selected.length>0?1:0.4,cursor:selected.length>0?"pointer":"not-allowed"}}>🎯 Generează analiza mea</button>
+        </div>
+        {selected.length===0&&<p style={{textAlign:"center",color:"rgba(255,255,255,0.3)",fontSize:12,marginTop:10}}>Selectează cel puțin o abilitate</p>}
+      </div>
+    </div>
+  );
+}
+
+// ── RESULTS COMPONENTS ────────────────────────────────────────────────────────
+function RiasecChart({profile}){
+  return(
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 28px"}}>
+      {Object.entries(RIASEC_META).map(([k,m])=>(
+        <div key={k}><div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:5}}><span style={{fontWeight:600,color:"#374151"}}>{m.name}</span><span style={{fontWeight:800,color:m.color}}>{profile[k]||0}%</span></div><div style={{height:8,background:"#f1f5f9",borderRadius:99}}><div style={{height:"100%",width:`${profile[k]||0}%`,background:m.color,borderRadius:99}}/></div></div>
+      ))}
+    </div>
+  );
+}
+
+function CareerCard({career,match,expanded,onToggle}){
+  const ol=OUTLOOK_COLORS[career.market_outlook]||OUTLOOK_COLORS["Bun"];
+  return(
+    <div style={{background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.07)",border:"1px solid #e5e7eb",marginBottom:14}}>
+      <div style={{padding:"18px 20px",cursor:"pointer"}} onClick={onToggle}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:14}}>
+          <div style={{fontSize:38,flexShrink:0}}>{career.emoji}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:3}}>
+              <h3 style={{margin:0,fontSize:17,fontWeight:800,color:"#111827"}}>{career.name}</h3>
+              <div style={{background:"linear-gradient(135deg,#4f46e5,#7c3aed)",color:"#fff",borderRadius:100,padding:"2px 10px",fontSize:12,fontWeight:700}}>{match.pct}% potrivire</div>
+            </div>
+            <p style={{margin:"0 0 3px",color:"#9ca3af",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>{career.domain}</p>
+            <p style={{margin:0,color:"#4b5563",fontSize:13,lineHeight:1.5,fontStyle:"italic"}}>{match.fit}</p>
+          </div>
+          <div style={{fontSize:13,color:"#9ca3af",transition:"transform 0.2s",transform:expanded?"rotate(180deg)":"none",flexShrink:0,marginTop:4}}>▼</div>
+        </div>
+      </div>
+      {expanded&&(
+        <div style={{borderTop:"1px solid #f3f4f6"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+            <div style={{padding:"14px 16px",borderRight:"1px solid #f3f4f6",borderBottom:"1px solid #f3f4f6"}}><div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>📋 Descriere</div><p style={{margin:0,color:"#374151",fontSize:12,lineHeight:1.7}}>{career.description}</p></div>
+            <div style={{padding:"14px 16px",borderBottom:"1px solid #f3f4f6"}}><div style={{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>☀️ O zi tipică</div><p style={{margin:0,color:"#374151",fontSize:12,lineHeight:1.7}}>{career.daily_life}</p></div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",borderBottom:"1px solid #f3f4f6"}}>
+            <div style={{padding:"10px 14px",borderRight:"1px solid #f3f4f6",textAlign:"center"}}><div style={{fontSize:9,fontWeight:700,color:"#059669",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>💰 Salariu RO</div><div style={{fontWeight:800,color:"#065f46",fontSize:11}}>{career.salary_ro}</div></div>
+            <div style={{padding:"10px 14px",borderRight:"1px solid #f3f4f6",textAlign:"center"}}><div style={{fontSize:9,fontWeight:700,color:ol.color,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>📈 Piața muncii</div><span style={{background:ol.bg,color:ol.color,borderRadius:100,padding:"2px 8px",fontWeight:800,fontSize:11}}>{career.market_outlook}</span></div>
+            <div style={{padding:"10px 14px",textAlign:"center"}}><div style={{fontSize:9,fontWeight:700,color:"#1d4ed8",textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>🎓 Educație</div><div style={{fontWeight:700,color:"#1e40af",fontSize:10}}>{career.education_path}</div></div>
+          </div>
+          <div style={{padding:"14px 16px",borderBottom:"1px solid #f3f4f6"}}><div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:7}}>🔑 Abilități necesare</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{career.required_skills.map(s=><span key={s} style={{background:"#ede9fe",color:"#5b21b6",borderRadius:100,padding:"3px 9px",fontSize:11,fontWeight:600}}>{s}</span>)}</div></div>
+          <div style={{padding:"14px 16px"}}><div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:7}}>⚠️ Provocări reale</div><div style={{display:"flex",flexDirection:"column",gap:5}}>{career.warnings.map(w=><div key={w} style={{background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,padding:"7px 10px",color:"#9a3412",fontSize:12}}>⚠️ {w}</div>)}</div></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FacultiesTab({matches}){
+  return(
+    <div>{matches.map(m=>{const c=DB[m.id];if(!c)return null;return(
+      <div key={m.id} style={{marginBottom:28}}>
+        <h3 style={{fontSize:16,fontWeight:800,color:"#111827",marginBottom:12}}>{c.emoji} {c.name}</h3>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {c.faculties.map((u,i)=>(
+            <div key={i} style={{background:"#fff",borderRadius:14,padding:16,boxShadow:"0 2px 10px rgba(0,0,0,0.05)",border:"1px solid #e5e7eb"}}>
+              <div style={{display:"flex",gap:12}}>
+                <div style={{background:"linear-gradient(135deg,#4f46e5,#7c3aed)",borderRadius:10,width:38,height:38,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🏛️</div>
+                <div style={{flex:1}}><div style={{fontWeight:800,color:"#111827",fontSize:14,marginBottom:2}}>{u.name}</div><div style={{color:"#6b7280",fontSize:12,marginBottom:7}}>{u.faculty}</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                    <span style={{background:"#eff6ff",color:"#1d4ed8",borderRadius:100,padding:"3px 9px",fontSize:10,fontWeight:600}}>📍 {u.city}</span>
+                    <span style={{background:"#f0fdf4",color:"#166534",borderRadius:100,padding:"3px 9px",fontSize:10,fontWeight:600}}>⏱️ {u.duration}</span>
+                    <span style={{background:"#fff7ed",color:"#c2410c",borderRadius:100,padding:"3px 9px",fontSize:10,fontWeight:600}}>📝 {u.admission_type}</span>
+                  </div>
+                  {u.notes&&<p style={{margin:"6px 0 0",color:"#6b7280",fontSize:11,fontStyle:"italic"}}>💡 {u.notes}</p>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );})}</div>
+  );
+}
+
+function RoadmapTab({roadmap}){
+  const steps=[{key:"now",label:"Acum — primii pași",icon:"⚡",color:"#7c3aed",bg:"#f5f3ff"},{key:"this_year",label:"În acest an școlar",icon:"📅",color:"#2563eb",bg:"#eff6ff"},{key:"before_bac",label:"Înainte de Bacalaureat",icon:"🎯",color:"#059669",bg:"#ecfdf5"},{key:"after_bac",label:"După Bacalaureat",icon:"🚀",color:"#d97706",bg:"#fffbeb"}];
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      {steps.map(s=>(
+        <div key={s.key} style={{background:s.bg,borderRadius:14,padding:16,border:`1px solid ${s.color}25`}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:20}}>{s.icon}</span><h3 style={{margin:0,fontSize:14,fontWeight:800,color:s.color}}>{s.label}</h3></div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {(roadmap[s.key]||[]).map((a,i)=>(
+              <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{width:22,height:22,borderRadius:"50%",background:s.color,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0}}>{i+1}</div>
+                <p style={{margin:0,color:"#374151",fontSize:13,lineHeight:1.6,paddingTop:2}}>{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Results({data,tab,setTab,expanded,setExpanded,onRestart}){
+  const tabs=["📊 Profilul meu","💼 Cariere","🏛️ Facultăți","🗺️ Roadmap"];
+  const matches=data?.matches||[];
+  const isOffline=data?.isOffline;
+  return(
+    <div style={{background:"#f8fafc",minHeight:"100vh",fontFamily:"'Inter',-apple-system,sans-serif",position:"relative"}}>
+      <QRCode/>
+      <div style={{background:"linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%)",padding:"28px 22px 20px",textAlign:"center"}}>
+        {isOffline&&<div style={{display:"inline-block",background:"rgba(245,158,11,0.2)",border:"1px solid rgba(245,158,11,0.4)",color:"#fbbf24",borderRadius:100,padding:"4px 14px",fontSize:11,fontWeight:700,marginBottom:12}}>⚡ Mod offline · analiză locală RIASEC</div>}
+        <div style={{fontSize:44,marginBottom:8}}>🎓</div>
+        <h1 style={{margin:"0 0 10px",fontSize:22,fontWeight:900,color:"#fff"}}>Analiza ta personalizată</h1>
+        <p style={{margin:"0 0 12px",color:"rgba(255,255,255,0.7)",fontSize:14,maxWidth:500,marginInline:"auto",lineHeight:1.7}}>{data?.profile_summary}</p>
+        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+          {(data?.dominant_traits||[]).map(t=><span key={t} style={{background:"rgba(167,139,250,0.2)",border:"1px solid rgba(167,139,250,0.4)",color:"#c4b5fd",borderRadius:100,padding:"4px 12px",fontSize:12,fontWeight:600}}>{t}</span>)}
+        </div>
+      </div>
+      <div style={{background:"#fff",borderBottom:"1px solid #e5e7eb",display:"flex",overflowX:"auto"}}>
+        {tabs.map((t,i)=><button key={t} onClick={()=>setTab(i)} style={{background:"none",border:"none",padding:"12px 14px",cursor:"pointer",fontWeight:tab===i?700:400,color:tab===i?"#4f46e5":"#6b7280",borderBottom:tab===i?"3px solid #4f46e5":"3px solid transparent",fontSize:13,whiteSpace:"nowrap",transition:"all 0.2s"}}>{t}</button>)}
+      </div>
+      <div style={{maxWidth:700,margin:"0 auto",padding:"22px 16px"}}>
+        {tab===0&&(
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{background:"#fff",borderRadius:16,padding:20,boxShadow:"0 2px 12px rgba(0,0,0,0.05)"}}><h2 style={{margin:"0 0 16px",fontSize:16,fontWeight:800,color:"#111827"}}>Profilul tău RIASEC</h2><RiasecChart profile={data?.riasec_profile||{}}/></div>
+            <div style={{background:"#fff",borderRadius:16,padding:20,boxShadow:"0 2px 12px rgba(0,0,0,0.05)"}}>
+              <h2 style={{margin:"0 0 14px",fontSize:16,fontWeight:800,color:"#111827"}}>Top 3 cariere pentru tine</h2>
+              {matches.slice(0,3).map((m,i)=>{const c=DB[m.id];if(!c)return null;return(
+                <div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:i<2?"1px solid #f3f4f6":"none"}}>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#4f46e5,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:900,fontSize:13,flexShrink:0}}>#{i+1}</div>
+                  <span style={{fontSize:24}}>{c.emoji}</span>
+                  <div style={{flex:1}}><div style={{fontWeight:700,color:"#111827",fontSize:14}}>{c.name}</div><div style={{color:"#9ca3af",fontSize:11}}>{c.domain}</div></div>
+                  <div style={{background:"#ede9fe",color:"#5b21b6",borderRadius:100,padding:"3px 12px",fontWeight:800,fontSize:13,flexShrink:0}}>{m.pct}%</div>
+                </div>
+              );})}
+              <button onClick={()=>setTab(1)} style={{...btnPrimary,width:"100%",marginTop:14,padding:"11px 0",fontSize:14,boxShadow:"none"}}>Vezi toate carierele detaliate →</button>
+            </div>
+          </div>
+        )}
+        {tab===1&&<div><p style={{color:"#6b7280",marginBottom:16,fontSize:14}}>Apasă pe o carieră pentru toate detaliile.</p>{matches.map(m=>{const c=DB[m.id];if(!c)return null;return <CareerCard key={m.id} career={c} match={m} expanded={expanded===m.id} onToggle={()=>setExpanded(expanded===m.id?null:m.id)}/>;})}</div>}
+        {tab===2&&<FacultiesTab matches={matches}/>}
+        {tab===3&&<RoadmapTab roadmap={data?.roadmap||{}}/>}
+      </div>
+      <div style={{textAlign:"center",padding:"16px 20px 40px"}}><button onClick={onRestart} style={{background:"none",border:"2px solid #e5e7eb",borderRadius:12,padding:"10px 24px",cursor:"pointer",color:"#6b7280",fontWeight:600,fontSize:13}}>🔄 Reîa evaluarea de la zero</button></div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App(){
+  const [screen,setScreen]=useState("welcome");
+  const [section,setSection]=useState(0);
+  const [qIdx,setQIdx]=useState(0);
+  const [wsIdx,setWsIdx]=useState(0);
+  const [riasec,setRiasec]=useState({});
+  const [values,setValues]=useState([]);
+  const [ws,setWs]=useState({});
+  const [skills,setSkills]=useState([]);
+  const [results,setResults]=useState(null);
+  const [tab,setTab]=useState(0);
+  const [expanded,setExpanded]=useState(null);
+  const [loadMsg,setLoadMsg]=useState("");
+
+  useEffect(()=>{
+    if(screen!=="loading")return;
+    const msgs=["🔍 Analizăm profilul tău RIASEC...","🧠 Identificăm combinația ta de talente...","🎯 Selectăm cele mai potrivite cariere...","🗺️ Construim roadmap-ul tău personalizat..."];
+    let i=0;setLoadMsg(msgs[0]);
+    const iv=setInterval(()=>{i=(i+1)%msgs.length;setLoadMsg(msgs[i]);},2400);
+    return()=>clearInterval(iv);
+  },[screen]);
+
+  const getRiasecPct=()=>{
+    const t={R:0,I:0,A:0,S:0,E:0,C:0};
+    RIASEC_FLAT.forEach(q=>{if(riasec[q.id]!=null)t[q.cat]+=riasec[q.id];});
+    const p={};Object.keys(t).forEach(k=>{p[k]=Math.round((t[k]/15)*100);});
+    return p;
+  };
+
+  const analyze=async()=>{
+    setScreen("loading");
+    const p=getRiasecPct();
+    // Try serverless API (available on Vercel)
+    try{
+      const ctrl=new AbortController();
+      const timer=setTimeout(()=>ctrl.abort(),7000);
+      const res=await fetch("/api/analyze",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({riasec:p,values,workstyle:Object.values(ws).filter(Boolean),skills:skills.slice(0,8)}),
+        signal:ctrl.signal,
+      });
+      clearTimeout(timer);
+      if(res.ok){
+        const data=await res.json();
+        // Enrich with roadmap locally
+        const topId=data.matches?.[0]?.id;
+        const roadmap=ROADMAP_DB[DOMAIN_CAT[topId]]||ROADMAP_DB.IT;
+        setResults({...data,roadmap,riasec_profile:p});
+        setScreen("results");return;
+      }
+    }catch(e){/* fall through to offline */}
+    // Offline fallback — instant local RIASEC algorithm
+    setResults(localAnalyze(p));
+    setScreen("results");
+  };
+
+  const calcPct=()=>{let d=0;if(section===0)d=qIdx;else if(section===1)d=18+values.length;else if(section===2)d=26+wsIdx;else d=30+Math.min(skills.length,9);return Math.min(Math.round((d/39)*100),99);};
+  const restart=()=>{setScreen("welcome");setSection(0);setQIdx(0);setWsIdx(0);setRiasec({});setValues([]);setWs({});setSkills([]);setResults(null);setTab(0);setExpanded(null);};
+  const handleRate=s=>{const q=RIASEC_FLAT[qIdx];setRiasec(p=>({...p,[q.id]:s}));if(qIdx<RIASEC_FLAT.length-1)setQIdx(qIdx+1);else setSection(1);};
+  const toggleValue=id=>setValues(p=>p.includes(id)?p.filter(x=>x!==id):p.length<3?[...p,id]:p);
+  const toggleSkill=s=>setSkills(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s]);
+  const handleWs=ans=>{const q=WORKSTYLE_DATA[wsIdx];setWs(p=>({...p,[q.id]:ans}));if(wsIdx<WORKSTYLE_DATA.length-1)setWsIdx(wsIdx+1);else setSection(3);};
+
+  if(screen==="welcome")return <Welcome onStart={()=>setScreen("quiz")}/>;
+  if(screen==="loading")return <Loading msg={loadMsg}/>;
+  if(screen==="results")return <Results data={results} tab={tab} setTab={setTab} expanded={expanded} setExpanded={setExpanded} onRestart={restart}/>;
+
+  return(
+    <div>
+      {section===0&&<RiasecScreen q={RIASEC_FLAT[qIdx]} current={riasec[RIASEC_FLAT[qIdx].id]} onRate={handleRate} onBack={()=>qIdx>0&&setQIdx(qIdx-1)} pct={calcPct()} section={0} qNum={qIdx+1}/>}
+      {section===1&&<ValuesScreen selected={values} onToggle={toggleValue} onNext={()=>{setSection(2);setWsIdx(0);}} onBack={()=>{setSection(0);setQIdx(RIASEC_FLAT.length-1);}} pct={calcPct()} section={1}/>}
+      {section===2&&<WorkStyleScreen q={WORKSTYLE_DATA[wsIdx]} current={ws[WORKSTYLE_DATA[wsIdx].id]} onSelect={handleWs} onBack={()=>wsIdx>0?setWsIdx(wsIdx-1):setSection(1)} pct={calcPct()} section={2} qNum={wsIdx+1}/>}
+      {section===3&&<SkillsScreen selected={skills} onToggle={toggleSkill} onFinish={analyze} onBack={()=>{setSection(2);setWsIdx(WORKSTYLE_DATA.length-1);}} pct={calcPct()} section={3}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>
